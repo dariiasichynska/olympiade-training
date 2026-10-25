@@ -1,0 +1,26 @@
+{
+  "name": "Olympiade-Training Stand",
+  "strict": false,
+  "spec": [
+    {
+      "name": "daten",
+      "label": "Daten (JSON)",
+      "type": "text"
+    },
+    {
+      "name": "geraet",
+      "label": "Gerät",
+      "type": "text"
+    },
+    {
+      "name": "anzahl",
+      "label": "Abgegebene Aufgaben",
+      "type": "number"
+    },
+    {
+      "name": "empfangen",
+      "label": "Empfangen",
+      "type": "date"
+    }
+  ]
+}

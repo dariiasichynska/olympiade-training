@@ -1,0 +1,140 @@
+{
+  "name": "Olympiade-Training: results from tablet",
+  "metadata": {
+    "instant": true,
+    "version": 1
+  },
+  "scheduling": {
+    "type": "immediately"
+  },
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "hook": "<YOUR_WEBHOOK_ID>",
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "id": 4,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "mapper": null,
+      "metadata": {
+        "designer": {
+          "x": 300,
+          "y": 0
+        }
+      },
+      "routes": [
+        {
+          "flow": [
+            {
+              "id": 2,
+              "module": "datastore:AddRecord",
+              "version": 1,
+              "filter": {
+                "name": "Daten vorhanden",
+                "conditions": [
+                  [
+                    {
+                      "a": "{{1.data}}",
+                      "o": "exist"
+                    }
+                  ]
+                ]
+              },
+              "parameters": {
+                "datastore": "<YOUR_DATA_STORE_ID>"
+              },
+              "mapper": {
+                "key": "{{ifempty(1.geraet; \"tablet\")}}",
+                "overwrite": true,
+                "data": {
+                  "daten": "{{1.data}}",
+                  "geraet": "{{ifempty(1.geraet; \"tablet\")}}",
+                  "anzahl": "{{1.anzahl}}",
+                  "empfangen": "{{now}}"
+                }
+              },
+              "metadata": {
+                "designer": {
+                  "x": 600,
+                  "y": -150
+                }
+              }
+            },
+            {
+              "id": 3,
+              "module": "gateway:WebhookRespond",
+              "version": 1,
+              "parameters": {},
+              "mapper": {
+                "status": 200,
+                "body": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Gesendet</title></head><body style=\"margin:0;padding:24px;background:#0b1030;color:#eef0ff;font-family:Arial,sans-serif;font-size:18px;line-height:1.5\"><div style=\"background:#18205a;border:2px solid #ffcf5c;border-radius:16px;padding:20px\"><h1 style=\"margin:0 0 8px;color:#ffcf5c;font-size:26px\">&#9733; Gesendet!</h1><p>Deine Ergebnisse ({{1.anzahl}} Aufgaben) sind angekommen.</p><p>Du kannst diese Seite jetzt schlie&szlig;en und zur&uuml;ck zum Training gehen.</p></div></body></html>",
+                "headers": [
+                  {
+                    "key": "Content-Type",
+                    "value": "text/html; charset=utf-8"
+                  }
+                ]
+              },
+              "metadata": {
+                "designer": {
+                  "x": 900,
+                  "y": -150
+                }
+              }
+            }
+          ]
+        },
+        {
+          "flow": [
+            {
+              "id": 5,
+              "module": "gateway:WebhookRespond",
+              "version": 1,
+              "filter": {
+                "name": "Nur Verbindungstest",
+                "conditions": [
+                  [
+                    {
+                      "a": "{{1.data}}",
+                      "o": "notexist"
+                    }
+                  ]
+                ]
+              },
+              "parameters": {},
+              "mapper": {
+                "status": 200,
+                "body": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Verbindung OK</title></head><body style=\"margin:0;padding:24px;background:#0b1030;color:#eef0ff;font-family:Arial,sans-serif;font-size:18px;line-height:1.5\"><div style=\"background:#18205a;border:2px solid #5fe0b5;border-radius:16px;padding:20px\"><h1 style=\"margin:0 0 8px;color:#5fe0b5;font-size:26px\">&#10003; Verbindung funktioniert</h1><p>Dieses Ger&auml;t kann Ergebnisse senden.</p></div></body></html>",
+                "headers": [
+                  {
+                    "key": "Content-Type",
+                    "value": "text/html; charset=utf-8"
+                  }
+                ]
+              },
+              "metadata": {
+                "designer": {
+                  "x": 600,
+                  "y": 150
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,177 @@
+/* Olympiade-Training · Offline-Version für alte Android-Browser (Android 4.x).
+   Keine CSS-Variablen, kein Grid, kein gap, keine env()/max()/clamp(). Nur dunkel. */
+html,body{background:#0b1030;color:#eef0ff}
+body{margin:0;padding:0 12px 48px 12px;font-family:"Roboto","Droid Sans",Arial,sans-serif;font-size:17px;line-height:1.5;-webkit-text-size-adjust:100%}
+*{-webkit-box-sizing:border-box;box-sizing:border-box}
+[hidden]{display:none!important}
+img,svg{max-width:100%}
+#sky{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#app{position:relative;z-index:1;max-width:980px;margin:0 auto}
+h1,h2,h3{font-family:"Roboto Condensed","Roboto","Droid Sans",Arial,sans-serif;font-weight:bold;margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+p{margin:.6em 0}
+.mono{font-family:"Droid Sans Mono",monospace}
+.muted{color:#a8afe0}
+.eyebrow{font-family:"Droid Sans Mono",monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#7fd8ff}
+
+/* Cockpit */
+.cockpit{padding:18px 0 10px;overflow:hidden}
+.cockpit .cat{float:left;width:64px;height:64px;margin:0 14px 8px 0}
+.cockpit h1{font-size:28px;line-height:1.1}
+.cockpit .sub{color:#a8afe0;font-size:15px;margin-top:4px}
+.dash{clear:both;padding-top:6px}
+.stat{display:inline-block;vertical-align:middle;background:#121947;border:1px solid #323d84;border-radius:22px;padding:5px 12px 5px 8px;margin:0 6px 8px 0;font-size:15px;white-space:nowrap}
+.stat b{font-size:18px;margin:0 3px}
+.stat .ic{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:11px;background:#1f2968;font-size:13px;margin-right:4px}
+.rank{background:#2f2672;border-color:#5b4aa8}
+.rankbar{display:inline-block;vertical-align:middle;height:6px;width:70px;background:#0b1030;border-radius:3px;overflow:hidden;margin-left:4px}
+.rankbar i{display:block;height:6px;background:#ffcf5c}
+.badges-row{clear:both;padding-top:2px}
+.medal{display:inline-block;vertical-align:middle;width:38px;height:38px;line-height:38px;text-align:center;border-radius:19px;font-size:19px;background:#f0a92c;background-image:-webkit-radial-gradient(35% 30%,circle,#ffe79b,#f0a92c 70%);border:none;padding:0;margin:0 6px 6px 0;box-shadow:0 3px 8px rgba(0,0,0,.45)}
+.medal.off{background:#121947;background-image:none;box-shadow:inset 0 0 0 2px #323d84;opacity:.5}
+.linkbtn{background:none;border:none;color:#7fd8ff;text-decoration:underline;padding:4px 2px;font-size:15px;vertical-align:middle}
+.badge-list{clear:both;margin-top:6px}
+.bcard{display:inline-block;vertical-align:top;width:48%;margin:0 1% 8px 0;background:#121947;border:1px solid #323d84;border-radius:12px;padding:8px 10px;overflow:hidden}
+.bcard .medal{float:left;margin-right:10px}
+.bcard b{display:block;font-size:15px}
+.bcard span{font-size:13px;color:#a8afe0}
+.notice{clear:both;border:1px solid #323d84;background:#1a1d4a;border-radius:12px;padding:10px 14px;font-size:15px;color:#a8afe0;margin-top:6px}
+.notice.ok{color:#5fe0b5;border-color:#2f6f63;background:#10303a}
+
+/* Karte */
+.mapwrap{position:relative;background:#121947;border:1px solid #323d84;border-radius:18px;padding:12px 8px 6px;margin-top:8px;overflow:hidden}
+.mapwrap h2{font-size:20px;padding:0 6px}
+.mapwrap .hint{padding:0 6px;color:#a8afe0;font-size:14px}
+#mapbox{width:100%}
+#map{display:block;margin-top:6px}
+.node{cursor:pointer}
+.node .lbl{fill:#a8afe0}
+
+/* Aufgabe */
+.topbar{padding:14px 0 8px}
+.topbar .btn,.topbar span{vertical-align:middle;margin-right:8px}
+.btn{display:inline-block;border:1px solid #323d84;border-radius:10px;padding:11px 16px;font-weight:bold;font-size:17px;background:#1f2968;color:#eef0ff;margin:0 6px 6px 0}
+.btn.primary{background:#ffcf5c;color:#2a1d00;border-color:#ffcf5c}
+.btn.ghost{background:transparent}
+.btn[disabled]{opacity:.45}
+.btn.small{padding:8px 12px;font-size:15px}
+.card{background:#18205a;border:1px solid #323d84;border-radius:16px;padding:16px 14px;margin-top:12px}
+.taskhead{overflow:hidden}
+.taskhead > div{float:left;max-width:80%}
+.taskhead .uabtn{float:right}
+.taskhead h2{font-size:24px;margin-top:2px}
+.tags{margin-top:6px}
+.tag{display:inline-block;font-family:"Droid Sans Mono",monospace;font-size:12px;border:1px solid #323d84;border-radius:12px;padding:1px 8px;color:#a8afe0;margin:0 4px 4px 0}
+.uabtn{font-family:"Droid Sans Mono",monospace;font-size:14px;border:1px solid #323d84;background:#121947;border-radius:8px;padding:6px 12px;color:#7fd8ff}
+.uabtn[aria-pressed="true"]{background:#7fd8ff;color:#0b1030}
+.tasktext{clear:both}
+.tasktext ol{list-style:none;padding:0;margin:.6em 0}
+.tasktext ol li{position:relative;padding-left:2.4em;margin:.35em 0}
+.tasktext ol li:before{content:attr(data-n);position:absolute;left:0;top:0;font-family:"Droid Sans Mono",monospace;font-size:.9em;color:#ffcf5c}
+.tasktext ul{padding-left:1.2em}
+.ua{border-left:3px solid #7fd8ff;padding-left:12px;margin-top:12px;color:#dfe6ff}
+.ua .eyebrow{display:block;margin-bottom:2px}
+.legend{font-size:14px;color:#a8afe0;margin-top:8px}
+.fig{display:block;margin:10px 0 0;max-width:100%}
+.minifigs{margin-top:8px}
+.minifig{display:inline-block;vertical-align:top;margin:0 8px 8px 0;background:#121947;border:1px solid #323d84;border-radius:12px;padding:8px;text-align:center}
+.minifig .fig{margin:0 auto}
+.minifig figcaption{font-size:13px;color:#a8afe0;margin-top:4px}
+.starters{margin:4px 0 8px}
+.starter{display:inline-block;border:1px dashed #323d84;background:#121947;color:#7fd8ff;border-radius:16px;padding:5px 11px;font-size:14px;margin:0 6px 6px 0}
+.lwhelp{border:1px solid #323d84;border-radius:12px;background:#121947;padding:6px 12px;margin:4px 0 8px;font-size:15px}
+.lwhelp summary{color:#7fd8ff;font-weight:bold}
+.lwhelp ol{margin:.5em 0;padding-left:1.3em}
+.warn{border-left:3px solid #ffcf5c;background:#33294a;border-radius:8px;padding:8px 12px;font-size:15px}
+.upload{border:1px solid #ffcf5c;border-radius:14px;padding:12px 14px;margin:8px 0 14px;background:#221d4a}
+.wkintro{background:#121947;border-radius:12px;padding:4px 14px;margin:10px 0 6px}
+.wkintro ol{list-style:decimal;padding-left:1.3em}
+.wkintro ol li{padding-left:0}
+.wkintro ol li:before{content:none}
+.wkitem{border-top:1px solid #323d84;padding:14px 0 6px}
+.wkitem > *{margin-bottom:8px}
+.wkq{overflow:hidden}
+.wkn{float:left;width:26px;height:26px;line-height:26px;text-align:center;border-radius:13px;background:#1f2968;font-family:"Droid Sans Mono",monospace;font-size:13px;margin-right:10px}
+.wkitem.ok .wkn{background:#5fe0b5;color:#06231c}
+.wkfb{font-size:15px}
+.wkfb.good{color:#5fe0b5}
+.seg.vert{display:block;white-space:normal;max-width:560px}
+.seg.vert button{display:block;width:100%;text-align:left;white-space:normal;line-height:1.4;border-bottom:1px solid #323d84}
+.fig text{fill:#a8afe0}
+.fig path,.fig rect,.fig line{stroke:#eef0ff}
+
+/* Tipps */
+.hints{margin-top:10px}
+.hintcard{border:1px dashed #323d84;border-radius:12px;padding:10px 12px;background:#121947;margin-bottom:8px}
+.hintcard.open{border-style:solid;border-color:#6a5bc0;background:#1d1c5a}
+.hintcard .hh{overflow:hidden}
+.hintcard h3{float:left;font-size:16px}
+.hintcard .timer{float:right}
+.hintcard p{clear:both;margin:.5em 0 0}
+.hintcard .btn{margin-top:8px}
+.timer{font-family:"Droid Sans Mono",monospace;font-size:14px;color:#a8afe0}
+
+/* Antworten */
+.form .part{margin-bottom:12px}
+.part > .pl{font-weight:bold;font-size:16px;color:#ffcf5c;margin-bottom:4px}
+.flabel{display:block;font-size:15px;color:#eef0ff;margin-bottom:4px}
+.row{margin:4px 0}
+.row > *{vertical-align:middle}
+input[type=text],select,textarea{background:#0f1540;border:1px solid #323d84;border-radius:8px;color:#eef0ff;font-size:17px;padding:9px 10px}
+input[type=text]{width:9em}
+input.wide{width:100%;max-width:420px;font-family:"Droid Sans Mono",monospace;margin-bottom:4px}
+textarea{width:100%;min-height:170px;font-family:inherit;line-height:1.5}
+select{min-width:9em;-webkit-appearance:menulist}
+.assign{max-width:460px}
+.assign label{display:inline-block;width:32%;font-weight:bold;margin-bottom:8px;vertical-align:middle}
+.assign select{display:inline-block;width:64%;margin-bottom:8px;vertical-align:middle}
+.chip{display:inline-block;border:1px solid #323d84;border-radius:8px;padding:7px 10px;background:#0f1540;font-family:"Droid Sans Mono",monospace;font-size:15px;margin:0 6px 6px 0}
+.chip input{width:18px;height:18px;vertical-align:middle;margin:0 6px 0 0}
+.seg{display:inline-block;border:1px solid #323d84;border-radius:8px;overflow:hidden;white-space:nowrap}
+.seg button{background:#0f1540;border:none;padding:9px 18px;font-weight:bold;display:inline-block}
+.seg button[aria-pressed="true"]{background:#ffcf5c;color:#2a1d00}
+.money label{display:inline-block;font-family:"Droid Sans Mono",monospace;margin:0 8px 6px 0}
+.money input{width:4em}
+.unit{font-family:"Droid Sans Mono",monospace;color:#a8afe0;font-size:14px;margin-left:6px}
+.res{font-family:"Droid Sans Mono",monospace;font-size:13px;padding:1px 7px;border-radius:10px}
+.res.ok{background:#12382f;color:#5fe0b5}
+.res.bad{background:#40211c;color:#ff8f72}
+.lw label{font-weight:bold}
+.lw .help{font-size:14px;color:#a8afe0;margin:2px 0 6px}
+.confirm{border:1px solid #ffcf5c;background:#2a2442;border-radius:12px;padding:12px 14px}
+.confirm > *{display:block;margin-bottom:8px}
+.err{color:#ff8f72;font-size:15px}
+
+/* Ergebnis */
+.result{overflow:hidden}
+.grade{float:left;width:88px;height:88px;border-radius:44px;text-align:center;font-weight:bold;font-size:40px;line-height:1;padding-top:14px;background:#121947;border:3px solid #323d84;margin:0 14px 8px 0}
+.grade small{display:block;font-size:11px;font-family:"Droid Sans Mono",monospace;font-weight:normal;margin-top:4px;color:#a8afe0}
+.grade.g-gold{border-color:#ffcf5c;color:#ffcf5c}
+.grade.g-silver{border-color:#cfd6ff;color:#cfd6ff}
+.grade.g-copper{border-color:#e2a272;color:#e2a272}
+.result h3{font-size:21px}
+.fb{margin:.4em 0 0}
+.fb b{color:#ffcf5c}
+.solution{border-top:1px solid #323d84;margin-top:14px;padding-top:10px}
+.solution li{margin:.3em 0}
+.next{margin-top:14px}
+.thinking{color:#a8afe0}
+
+/* Toast */
+#toasts{position:fixed;right:12px;bottom:12px;z-index:20;width:300px;max-width:90%}
+.toast{background:#2a2370;border:1px solid #ffcf5c;border-radius:14px;padding:10px 12px;margin-top:8px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.toast .medal{float:left;margin-right:10px}
+.toast b{display:block}
+.toast span{font-size:14px;color:#a8afe0}
+
+/* Fehleranzeige */
+#boot-msg{background:#18205a;border:1px solid #323d84;border-radius:12px;padding:14px;margin-top:20px}
+#err-box{background:#40211c;color:#ffd9cf;border:1px solid #ff8f72;border-radius:12px;padding:12px;margin:12px 0;font-size:14px;word-wrap:break-word}
+
+.eltern table{border-collapse:collapse;width:100%;font-size:15px}
+.eltern th,.eltern td{text-align:left;padding:6px 8px;border-bottom:1px solid #323d84}
+.tablewrap{overflow-x:auto}
+.footer{margin-top:24px;color:#6f78b8;font-size:13px}
+.footer > *{display:block;margin-bottom:6px}
+#transfer .row .btn{margin-bottom:8px}
+#impBox > *{display:block;margin-bottom:8px}
