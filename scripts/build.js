@@ -51,7 +51,7 @@ async function buildLegacy() {
   js = js.replace(/var\(--([\w-]+)\)/g, (m, k) => { if (!(k in vars)) throw new Error('unknown CSS var ' + k); return vars[k].replace(/"/g, "'"); });
 
   // 2) emoji -> glyphs available in Android 4.x fonts
-  const BADGE_GLYPH = { start:'GO', selbst:'!', treffer:'√', durchhalter:'3', forscher:'15', stern:'★', erklaer:'2+', comeback:'↑', kater:'L', halb:'½', serie:'3T', galaxie:'★', werkstatt:'W' };
+  const BADGE_GLYPH = { start:'GO', selbst:'!', treffer:'√', durchhalter:'3', forscher:'10', stern:'★', erklaer:'2+', comeback:'↑', kater:'L', halb:'½', serie:'3T', galaxie:'★', werkstatt:'W' };
   js = js.replace(/\{id:"(\w+)", ic:"[^"]+"/g, (m, id) => { if (!BADGE_GLYPH[id]) throw new Error('no glyph for badge ' + id); return `{id:"${id}", ic:"${BADGE_GLYPH[id]}"`; });
   const MAP = { '✎':'*', '✖':'x', '🌳':'*', '📜':'*', '⭐':'★', '🔒':'×', '🛈':'i', '✦':'*', '◉':'○', '▣':'□', '✓':'√', '✗':'×' };
   for (const [k, v] of Object.entries(MAP)) js = js.split(k).join(v);

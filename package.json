@@ -1,7 +1,7 @@
 {
   "name": "olympiade-training",
-  "version": "1.0.0",
-  "description": "Offline-first math olympiad trainer for a 10-year-old on a 2014 Android tablet, with staged hints, AI-graded reasoning and results sync via Make.com.",
+  "version": "1.3.0",
+  "description": "Offline-first math olympiad trainer for a 10-year-old on a 2014 Android tablet, with staged hints, a 15-minute focus timer, AI grading and results sync via Make.com.",
   "private": true,
   "license": "MIT",
   "author": "Dariia Sichynska",

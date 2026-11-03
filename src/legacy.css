@@ -175,3 +175,22 @@ select{min-width:9em;-webkit-appearance:menulist}
 .footer > *{display:block;margin-bottom:6px}
 #transfer .row .btn{margin-bottom:8px}
 #impBox > *{display:block;margin-bottom:8px}
+
+/* Zeit pro Aufgabe */
+.timebar{position:fixed;top:0;left:0;right:0;z-index:15;padding:8px 12px 10px;background:#0e1440;border-bottom:1px solid #323d84;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.tclock{display:inline-block;vertical-align:middle;font-family:"Droid Sans Mono",monospace;font-size:26px;color:#7fd8ff;margin-right:12px}
+.tmsg{display:inline-block;vertical-align:middle;font-size:15px;line-height:1.35;max-width:72%}
+.tprog{display:block;height:5px;background:#0b1030;border-radius:3px;overflow:hidden;margin-top:6px}
+.tprog i{display:block;height:5px;background:#7fd8ff}
+.timebar.warn .tclock{color:#ffcf5c}
+.timebar.warn .tprog i{background:#ffcf5c}
+.timebar.alarm .tclock{color:#ff8f72}
+.timebar.alarm .tprog i{background:#ff8f72}
+.timeup{position:fixed;top:0;left:0;right:0;bottom:0;z-index:40;background:#070b24;background:rgba(7,11,36,.96);padding:30px 16px;overflow:auto;text-align:center}
+.tubox{max-width:520px;margin:0 auto}
+.tubox .tucat{width:110px;height:110px}
+.tubox h2{font-size:34px;color:#ffcf5c;margin-top:8px}
+.tubox p{font-size:18px;margin:.7em 0 1.2em}
+.tubtns{max-width:360px;margin:0 auto}
+.tubtns .btn{display:block;width:100%;margin:0 0 10px 0}
+.tubtns .btn.primary{font-size:20px;padding:16px 20px}

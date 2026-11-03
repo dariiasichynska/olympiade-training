@@ -103,6 +103,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .lwhelp{border:1px solid var(--line);border-radius:12px;background:var(--space-2);padding:6px 12px;margin:4px 0 8px;font-size:15px}
 .lwhelp summary{cursor:pointer;color:var(--comet);font-weight:700}
 .lwhelp ol{margin:.5em 0;padding-left:1.3em}
+.dictate{border:1px dashed var(--comet);border-radius:12px;background:var(--space-2);padding:8px 12px;font-size:15px;margin:4px 0 8px}
+.lw .lwpl{display:block;margin:10px 0 4px;font-family:var(--f-display);font-weight:600;color:var(--star)}
+.lw textarea{box-sizing:border-box}
+.lw textarea.lwp{min-height:110px}
 .warn{border-left:3px solid var(--star);background:#33294a;border-radius:8px;padding:8px 12px;font-size:15px}
 .upload{border:1px solid var(--star);border-radius:14px;padding:12px 14px;margin:8px 0 14px;background:#221d4a}
 .wkintro{background:var(--space-2);border-radius:12px;padding:4px 14px;margin:10px 0 6px}
@@ -195,6 +199,21 @@ select{min-width:11ch}
 .eltern .dbody{padding:0 14px 14px;display:grid;gap:8px;font-size:15px}
 .eltern pre{white-space:pre-wrap;font-family:var(--f-body);background:#0f1540;border-radius:10px;padding:10px;margin:0}
 .footer{margin-top:28px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--faint);font-size:13px}
+/* Zeit pro Aufgabe */
+.timebar{position:fixed;top:0;left:0;right:0;z-index:15;display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;padding:calc(8px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:#0e1440f2;border-bottom:1px solid var(--line);box-shadow:0 6px 18px #0008}
+.tclock{font-family:var(--f-mono);font-size:26px;font-weight:500;color:var(--comet);min-width:4.2ch;font-variant-numeric:tabular-nums}
+.tmsg{flex:1 1 220px;font-size:15px;color:var(--text);line-height:1.35}
+.tprog{flex:1 1 100%;height:5px;background:var(--space);border-radius:9px;overflow:hidden}
+.tprog i{display:block;height:100%;background:var(--comet);transition:width 1s linear}
+.timebar.warn .tclock{color:var(--star)}.timebar.warn .tprog i{background:var(--star)}
+.timebar.alarm .tclock{color:var(--bad)}.timebar.alarm .tprog i{background:var(--bad)}
+.timeup{position:fixed;inset:0;z-index:40;background:#070b24f2;display:grid;place-items:center;padding:20px 16px;overflow:auto}
+.tubox{max-width:520px;text-align:center}
+.tubox .tucat{width:120px;height:120px}
+.tubox h2{font-size:clamp(30px,8vw,46px);color:var(--star);margin-top:8px}
+.tubox p{font-size:18px;color:var(--text);margin:.7em 0 1.2em}
+.tubtns{display:flex;flex-direction:column;gap:10px;align-items:stretch;max-width:360px;margin:0 auto}
+.tubtns .btn.primary{font-size:20px;padding:16px 20px}
 @media (max-width:560px){
   body{font-size:16px}
   .cockpit{grid-template-columns:auto 1fr}
