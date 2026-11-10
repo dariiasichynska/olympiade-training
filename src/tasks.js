@@ -138,7 +138,7 @@ const TASKS = [
   rubrik:"Volle Punkte nur mit Ausschluss-Begründung (Endziffer 5, Paare mit Summe 10) und Probe."
 },
 {
-  id:"demo07", jahr:"Demo", thema:"Geometrie", titel:"Der Gemüsegarten",
+  id:"demo07", runde:"Regionalrunde", jahr:"Demo", thema:"Geometrie", titel:"Der Gemüsegarten",
   text:`<p>Ein rechteckiger Gemüsegarten wird mit einem Zaun von genau 20 m Länge eingezäunt. Seine Seitenlängen sind ganze Meter.</p>
 <ol class="parts"><li data-n="a)">Gib alle möglichen Größen des Gartens an (z. B. 3 × 7). Gärten, die durch Drehung gleich sind, zählen nur einmal.</li>
 <li data-n="b)">Welcher dieser Gärten hat die größte Fläche? Gib die Fläche in m² an.</li></ol>`,
@@ -160,7 +160,7 @@ const TASKS = [
   rubrik:"a) Herleitung Länge + Breite = 10 und vollständige Liste; b) alle Flächen verglichen."
 },
 {
-  id:"demo08", jahr:"Demo", thema:"Rechnen", titel:"Vier Fünfen",
+  id:"demo08", runde:"Regionalrunde", jahr:"Demo", thema:"Rechnen", titel:"Vier Fünfen",
   text:`<p>Stelle die Zahlen 1 bis 6 jeweils mit <b>genau vier Fünfen</b> dar. Du darfst nur +, −, ·, : und Klammern benutzen und musst „Punkt vor Strich“ beachten.</p>
 <p>Beispiel: 5 − 5 + 5 − 5 = 0.</p>`,
   ua:`<p>Запиши кожне з чисел від 1 до 6 за допомогою <b>рівно чотирьох п'ятірок</b>. Можна використовувати лише +, −, ·, : і дужки, дотримуючись правила «множення й ділення раніше за додавання й віднімання».</p>
@@ -177,7 +177,7 @@ const TASKS = [
   rubrik:"Jede Darstellung muss genau vier Fünfen benutzen und mit Punkt-vor-Strich stimmen. Kurzer Satz zum Vorgehen genügt."
 },
 {
-  id:"demo09", jahr:"Demo", thema:"Geometrie", titel:"Ein Schnitt durchs Quadrat",
+  id:"demo09", runde:"Regionalrunde", jahr:"Demo", thema:"Geometrie", titel:"Ein Schnitt durchs Quadrat",
   noLw:true,
   text:`<p>Zeichne ein Quadrat und schneide es mit einer geraden Linie in zwei Teile. Zeichne mit Bleistift und Lineal:</p>
 <ol class="parts"><li data-n="a)">zwei Dreiecke,</li><li data-n="b)">zwei Vierecke,</li><li data-n="c)">ein Dreieck und ein Fünfeck,</li><li data-n="d)">ein Dreieck und ein Viereck.</li></ol>

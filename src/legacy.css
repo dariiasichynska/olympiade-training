@@ -194,3 +194,10 @@ select{min-width:9em;-webkit-appearance:menulist}
 .tubtns{max-width:360px;margin:0 auto}
 .tubtns .btn{display:block;width:100%;margin:0 0 10px 0}
 .tubtns .btn.primary{font-size:20px;padding:16px 20px}
+.versuch{border-top:1px dashed #323d84;margin-top:14px;padding-top:10px}
+.hintcard summary{cursor:pointer;font-weight:bold}
+.galtabs{margin:0 0 10px}
+.galtab{display:inline-block;margin:0 6px 6px 0;font:inherit;font-weight:bold;font-size:15px;background:#121947;color:#fff;border:1px solid #323d84;border-radius:20px;padding:8px 14px}
+.galtab[aria-selected="true"]{background:#7fd8ff;color:#0b1030;border-color:#7fd8ff}
+.galtab[aria-selected="true"] .muted{color:#0b1030}
+.galnote{margin:0 0 8px}

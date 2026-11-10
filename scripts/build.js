@@ -51,9 +51,9 @@ async function buildLegacy() {
   js = js.replace(/var\(--([\w-]+)\)/g, (m, k) => { if (!(k in vars)) throw new Error('unknown CSS var ' + k); return vars[k].replace(/"/g, "'"); });
 
   // 2) emoji -> glyphs available in Android 4.x fonts
-  const BADGE_GLYPH = { start:'GO', selbst:'!', treffer:'√', durchhalter:'3', forscher:'10', stern:'★', erklaer:'2+', comeback:'↑', kater:'L', halb:'½', serie:'3T', galaxie:'★', werkstatt:'W' };
+  const BADGE_GLYPH = { start:'GO', selbst:'!', treffer:'√', durchhalter:'3', forscher:'10', stern:'★', erklaer:'2+', comeback:'↑', kater:'L', halb:'½', serie:'3T', galaxie:'★', werkstatt:'W', regio:'R', regio1:'R1', zehn:'10★', zwanzig:'20★', treffer3:'3√', blitz:'B!', selbst3:'3!', nochmal:'2×', gipfel:'R2', logik2:'L+', fleiss:'3/T', woche:'7T', tage14:'14T' };
   js = js.replace(/\{id:"(\w+)", ic:"[^"]+"/g, (m, id) => { if (!BADGE_GLYPH[id]) throw new Error('no glyph for badge ' + id); return `{id:"${id}", ic:"${BADGE_GLYPH[id]}"`; });
-  const MAP = { '✎':'*', '✖':'x', '🌳':'*', '📜':'*', '⭐':'★', '🔒':'×', '🛈':'i', '✦':'*', '◉':'○', '▣':'□', '✓':'√', '✗':'×' };
+  const MAP = { '✎':'*', '✖':'x', '🌳':'*', '📜':'*', '🔍':'*', '⭐':'★', '🔒':'×', '🛈':'i', '✦':'*', '◉':'○', '▣':'□', '✓':'√', '✗':'×' };
   for (const [k, v] of Object.entries(MAP)) js = js.split(k).join(v);
 
   // 3) transpile to ES5 and minify

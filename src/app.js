@@ -9,7 +9,7 @@ const UPLOAD_URL = "__UPLOAD_URL__".indexOf("__")===0 ? "" : "__UPLOAD_URL__";
 const PARENT_NOTE_LANG = "Deutsch";
 const DEVICE_ID = "__DEVICE_ID__".indexOf("__")===0 ? "tablet-1" : "__DEVICE_ID__";
 const IDLE_MS = 10*60*1000;             // nach 10 min ohne Eingabe zählt die Zeit nicht mehr
-const TIME_LIMIT = 15*60*1000;          // Zielzeit pro Aufgabe (aktive Zeit)
+const TIME_LIMIT = 20*60*1000;          // Zielzeit pro Aufgabe (aktive Zeit)
 const EXTRA_MS = 5*60*1000;             // Extrazeit pro Klick, beliebig oft
 const $ = (s,el=document)=>el.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -22,6 +22,10 @@ const lsGet = k => { try { const v=localStorage.getItem(k); return v?JSON.parse(
 const lsSet = (k,v) => { try { localStorage.setItem(k,JSON.stringify(v)); } catch(e){} };
 const taskById = id => TASKS.find(t=>t.id===id);
 const taskIndex = id => TASKS.findIndex(t=>t.id===id);
+const rundeOf = t => (t&&t.runde)||"Schulrunde";
+const GALS = [{key:"Schulrunde", name:"Galaxie 1 · Schulrunde"},{key:"Regionalrunde", name:"Galaxie 2 · Regionalrunde"}];
+const galTasks = g => TASKS.filter(t=>rundeOf(t)===g);
+function curGal(){ if(!S.gal){ const v=lsGet("olymp-gal"); S.gal=GALS.some(G=>G.key===v)?v:"Regionalrunde"; } return S.gal; }
 
 /* ===== Bilder ===== */
 function catSVG(cls=""){
@@ -161,6 +165,19 @@ const BADGES=[
   {id:"halb", ic:"🌗", name:"Halbe Galaxie", desc:"Die Hälfte der Sterne abgegeben.", test:p=>doneList(p).length>=Math.ceil(TASKS.length/2)},
   {id:"serie", ic:"📅", name:"Drei Trainingstage", desc:"An drei verschiedenen Tagen geübt.", test:p=>(p.tage||[]).length>=3},
   {id:"galaxie", ic:"🌌", name:"Galaxie erobert", desc:"Alle Sterne abgegeben.", test:p=>doneList(p).length>=TASKS.length},
+  {id:"regio", ic:"🏔️", name:"Regional-Profi", desc:"Alle Sterne der Regionalrunde abgegeben.", test:p=>galTasks("Regionalrunde").every(t=>p.aufgaben[t.id]&&p.aufgaben[t.id].abgabe)},
+  {id:"regio1", ic:"⛰️", name:"Bergsteiger", desc:"Den ersten Stern der Regionalrunde abgegeben.", test:p=>doneList(p).some(a=>rundeOf(taskById(a.id))==="Regionalrunde")},
+  {id:"zehn", ic:"🔟", name:"Zehn Sterne", desc:"Zehn Aufgaben abgegeben.", test:p=>doneList(p).length>=10},
+  {id:"zwanzig", ic:"💫", name:"Zwanzig Sterne", desc:"Zwanzig Aufgaben abgegeben.", test:p=>doneList(p).length>=20},
+  {id:"treffer3", ic:"🏹", name:"Meisterschütze", desc:"Drei Aufgaben mit allen Antworten richtig.", test:p=>doneList(p).filter(a=>a.einheiten&&a.richtig===a.einheiten).length>=3},
+  {id:"blitz", ic:"⚡", name:"Blitzdenker", desc:"Eine Aufgabe in höchstens 10 Minuten komplett richtig.", test:p=>doneList(p).some(a=>a.einheiten&&a.richtig===a.einheiten&&(a.dauerMin||99)<=10)},
+  {id:"selbst3", ic:"🦉", name:"Kluge Eule", desc:"Drei Aufgaben ganz ohne Tipp abgegeben.", test:p=>doneList(p).filter(a=>hintsUsed(a)===0).length>=3},
+  {id:"nochmal", ic:"🔁", name:"Zweite Chance", desc:"Mit „Nochmal lösen“ mehr richtig als beim ersten Mal.", test:p=>doneList(p).some(a=>(a.versuche||[]).some(v=>(v.richtig||0)>(a.richtig||0)))},
+  {id:"gipfel", ic:"🏔️", name:"Gipfelstürmer", desc:"In der Regionalrunde eine Note 2 oder besser.", test:p=>doneList(p).some(a=>rundeOf(taskById(a.id))==="Regionalrunde"&&a.note&&a.note<=2)},
+  {id:"logik2", ic:"🧩", name:"Logik-Profi", desc:"Alle Logik-Rätsel aus beiden Galaxien abgegeben.", test:p=>TASKS.filter(t=>t.thema==="Logik").every(t=>p.aufgaben[t.id]&&p.aufgaben[t.id].abgabe)},
+  {id:"fleiss", ic:"🐝", name:"Fleißige Biene", desc:"Drei Aufgaben an einem einzigen Tag abgegeben.", test:p=>{ const c={}; doneList(p).forEach(a=>{ const d=new Date(a.abgabe).toDateString(); c[d]=(c[d]||0)+1; }); return Object.keys(c).some(k=>c[k]>=3); }},
+  {id:"woche", ic:"📆", name:"Eine Woche dabei", desc:"An sieben verschiedenen Tagen geübt.", test:p=>(p.tage||[]).length>=7},
+  {id:"tage14", ic:"🗓️", name:"Dranbleiber", desc:"An vierzehn verschiedenen Tagen geübt.", test:p=>(p.tage||[]).length>=14},
   {id:"werkstatt", ic:"🛠️", name:"Werkstatt-Meister", desc:"Alle Übungen in der Werkstatt geschafft.", test:p=>WERKSTATT.every(st=>st.items.every(it=>(p.werkstatt||{})[it.id]))}
 ];
 const GRADE_BONUS={1:30,2:25,3:18,4:12,5:6,6:3};
@@ -193,9 +210,14 @@ function saveAbgabe(id,data){
   if(S.mode==="db" && S.canWrite){ const snap=JSON.parse(JSON.stringify(data)); queue("a"+id, ()=>S.db.doc("olymp/"+S.uid+"/abgaben/"+id).set(snap)); }
 }
 function loadAbgabeLocal(id){ return lsGet("olymp-abgabe-"+(S.uid||"lokal")+"-"+id); }
-const draftKey = id => "olymp-draft-"+(S.uid||"lokal")+"-"+id;
+const draftKey = id => "olymp-draft-"+(S.uid||"lokal")+"-"+id+((S.prog&&S.prog.aufgaben[id]&&S.prog.aufgaben[id].wieder)?"-w":"");
+const isRetry = t => { const a=S.prog.aufgaben[t.id]; return !!(a&&a.abgabe&&a.wieder); };
+const tryNr = a => 2+((a&&a.versuche)||[]).length;
+function lastTry(t){ const ab=loadAbgabeLocal(t.id)||S.abgabenCache?.[t.id]; if(!ab) return null; const vs=ab.versuche||[]; return vs.length?vs[vs.length-1]:ab; }
 function partsOf(t){ const ps=[]; t.fields.forEach(f=>{ if(f.part&&ps.indexOf(f.part)<0) ps.push(f.part); }); return ps; }
-function getDraft(t){ const d=lsGet(draftKey(t.id))||{}; d.vals=d.vals||{}; for(const f of t.fields) if(d.vals[f.id]===undefined) d.vals[f.id]=emptyValue(f);
+function getDraft(t){ let d=lsGet(draftKey(t.id));
+  if(!d){ d={}; if(isRetry(t)){ const l=lastTry(t); if(l){ d.vals=JSON.parse(JSON.stringify(l.vals||{})); if(l.lw!=null) d.lw=l.lw; } } }
+  d.vals=d.vals||{}; for(const f of t.fields) if(d.vals[f.id]===undefined) d.vals[f.id]=emptyValue(f);
   if(d.lw===undefined){ const ps=partsOf(t); d.lw= (ps.length>1&&!t.noLw)? ps.map(x=>x+" ").join("\n\n") : ""; }
   return d; }
 function lwPartsOf(t){ const ps=partsOf(t); return ps.length>1 ? ps : [""]; }
@@ -216,13 +238,16 @@ function putDraft(t,d){ clearTimeout(draftTimer); draftTimer=setTimeout(()=>lsSe
 function unlocked(i){ return true; }     // jeder Stern ist frei wählbar
 const isDoneT = t => !!(S.prog.aufgaben[t.id]&&S.prog.aufgaben[t.id].abgabe);
 function currentIndex(){
-  let i=TASKS.findIndex(t=>!isDoneT(t)&&!(S.prog.aufgaben[t.id]&&S.prog.aufgaben[t.id].weiter));
-  if(i<0) i=TASKS.findIndex(t=>!isDoneT(t));
+  const g=curGal(), inG=t=>rundeOf(t)===g;
+  let i=TASKS.findIndex(t=>inG(t)&&!isDoneT(t)&&!(S.prog.aufgaben[t.id]&&S.prog.aufgaben[t.id].weiter));
+  if(i<0) i=TASKS.findIndex(t=>inG(t)&&!isDoneT(t));
+  if(i<0){ for(let k=TASKS.length-1;k>=0;k--) if(inG(TASKS[k])) return k; }
   return i<0?TASKS.length-1:i;
 }
 function nextOpenIndex(from){
-  for(let k=from+1;k<TASKS.length;k++) if(!isDoneT(TASKS[k])) return k;
-  for(let k=0;k<from;k++) if(!isDoneT(TASKS[k])) return k;
+  const g=rundeOf(TASKS[from]);
+  for(let k=from+1;k<TASKS.length;k++) if(rundeOf(TASKS[k])===g&&!isDoneT(TASKS[k])) return k;
+  for(let k=0;k<from;k++) if(rundeOf(TASKS[k])===g&&!isDoneT(TASKS[k])) return k;
   return -1;
 }
 /* ===== Zeit pro Aufgabe ===== */
@@ -232,7 +257,7 @@ function timeCls(rem){ return rem<=2*60000?"alarm":(rem<=5*60000?"warn":""); }
 function timeMsg(rem,a){
   if(a.extraMs) return rem>2*60000 ? "Extrazeit läuft. Du schaffst das – trag deine Antworten ein!" : "Die Extrazeit ist bald um. Trag ein, was du schon hast!";
   const m=rem/60000;
-  if(m>10) return "15 Minuten für diesen Stern. Du schaffst das – Kater Komet glaubt an dich!";
+  if(m>10) return (TIME_LIMIT/60000)+" Minuten für diesen Stern. Du schaffst das – Kater Komet glaubt an dich!";
   if(m>5) return "Super, du bist mittendrin! Lies die Frage ruhig noch einmal genau.";
   if(m>2) return "Endspurt! Schreib jetzt deine Antworten in die Felder.";
   return "Gleich ist die Zeit um. Trag ein, was du schon hast!";
@@ -261,7 +286,7 @@ function showTimeUp(t,a){
   el.id="timeup"; el.className="timeup"; el.setAttribute("role","dialog"); el.setAttribute("aria-modal","true"); el.setAttribute("aria-labelledby","tuH");
   const vn=verlN(a);
   el.innerHTML=`<div class="tubox">${catSVG("tucat")}<h2 id="tuH">${vn?"Die Extrazeit ist um!":"Zeit ist um!"}</h2>
-    <p>${vn?"Du hast schon "+vn+"× um 5 Minuten verlängert.":"15 Minuten für diesen Stern sind vorbei."} Brauchst du noch Zeit für „${esc(t.titel)}“? Dann nimm dir 5 Minuten mehr – so oft du willst. Du kannst auch abgeben oder später zurückkommen.</p>
+    <p>${vn?"Du hast schon "+vn+"× um 5 Minuten verlängert.":(TIME_LIMIT/60000)+" Minuten für diesen Stern sind vorbei."} Brauchst du noch Zeit für „${esc(t.titel)}“? Dann nimm dir 5 Minuten mehr – so oft du willst. Du kannst auch abgeben oder später zurückkommen.</p>
     <div class="tubtns"><button class="btn primary" id="tuMore">Noch 5 Minuten</button>
     <button class="btn" id="tuSubmit">Meine Antworten abgeben</button>
     <button class="btn ghost" id="tuNext">${n>=0?"Weiter zu Stern "+(n+1)+" →":"Zur Galaxie"}</button></div></div>`;
@@ -326,11 +351,13 @@ function bindCockpit(){
   document.querySelectorAll('[data-act="badges"]').forEach(b=>b.onclick=()=>{S.showBadges=!S.showBadges; render();});
 }
 function renderMapShell(){
-  const i=currentIndex(), t=TASKS[i], a=S.prog.aufgaben[t.id];
-  const allDone=doneList(S.prog).length===TASKS.length;
+  const g=curGal(), gt=galTasks(g), i=currentIndex(), t=TASKS[i], a=S.prog.aufgaben[t.id];
+  const allDone=gt.every(isDoneT);
   return `<section class="mapwrap" aria-label="Galaxie-Karte">
-    <h2>${allDone?"Galaxie erobert! Alle 12 Sterne leuchten.":"Nächster Stern: "+esc(t.titel)}</h2>
-    <p class="hint">${allDone?"Du kannst jeden Stern antippen und dir deine Lösungen noch einmal ansehen.":(a&&a.start?"Du hast diese Aufgabe schon angefangen. Tippe auf den Stern, um weiterzumachen.":"Tippe auf den leuchtenden Stern – oder wähle selbst einen anderen. Für jeden Stern hast du 15 Minuten.")}</p>
+    <div class="galtabs" role="tablist" aria-label="Galaxien">${GALS.map(G=>{ const all=galTasks(G.key), n=all.filter(isDoneT).length; return `<button type="button" class="galtab" role="tab" aria-selected="${G.key===g}" data-gal="${G.key}">${esc(G.name)} <span class="muted">${n}/${all.length}</span></button>`; }).join("")}</div>
+    ${g==="Regionalrunde"?`<p class="hint galnote">Die 2. Stufe der Olympiade: längere Aufgaben, und für die Begründung gibt es noch mehr Punkte. Schreib bei jedem Schritt, <b>warum</b> er stimmt.</p>`:""}
+    <h2>${allDone?"Galaxie erobert! Alle "+gt.length+" Sterne leuchten.":"Nächster Stern: "+esc(t.titel)}</h2>
+    <p class="hint">${allDone?"Du kannst jeden Stern antippen und dir deine Lösungen noch einmal ansehen.":(a&&a.start?"Du hast diese Aufgabe schon angefangen. Tippe auf den Stern, um weiterzumachen.":"Tippe auf den leuchtenden Stern – oder wähle selbst einen anderen. Für jeden Stern hast du "+(TIME_LIMIT/60000)+" Minuten.")}</p>
     <div id="mapbox"></div>
   </section>
   ${renderWerkstattCard()}
@@ -428,10 +455,20 @@ function importData(inc){
     let takeB=false;
     if(B.abgabe && abB){
       if(!A||!A.abgabe) takeB=true;
-      else if(A.abgabe===B.abgabe) takeB=!!(B.note&&!A.note);
+      else if(A.abgabe===B.abgabe) takeB=!!(B.note&&!A.note) || (B.versuche||[]).length>(A.versuche||[]).length;
       else takeB=B.abgabe<A.abgabe;        // ein Versuch: die frühere Abgabe gilt
     }
-    if(takeB){ p.aufgaben[t.id]=JSON.parse(JSON.stringify(B)); if(!B.note) p.aufgaben[t.id].status="ausstehend"; saveAbgabe(t.id,abB); changed++; }
+    if(takeB){
+      const nb=JSON.parse(JSON.stringify(B)), nab=JSON.parse(JSON.stringify(abB)), GF=["note","lob","tipp","elternnotiz","status","bewertetAm"];
+      if(A&&A.abgabe===B.abgabe){
+        const abA=loadAbgabeLocal(t.id)||S.abgabenCache?.[t.id]||{};
+        if(A.note&&!nb.note){ nb.note=A.note; nb.status=A.status; GF.forEach(f=>{ if(abA[f]!=null) nab[f]=abA[f]; }); }
+        (nb.versuche||[]).forEach((v,k)=>{ const va=(A.versuche||[])[k], fa=(abA.versuche||[])[k];
+          if(va&&va.abgabe===v.abgabe&&va.note&&!v.note){ v.note=va.note; v.status=va.status; if(fa&&nab.versuche&&nab.versuche[k]) GF.forEach(f=>{ if(fa[f]!=null) nab.versuche[k][f]=fa[f]; }); } });
+        if(A.wieder&&!nb.wieder) nb.wieder=A.wieder;
+      }
+      if(!nb.note) nb.status="ausstehend";
+      p.aufgaben[t.id]=nb; saveAbgabe(t.id,nab); changed++; }
     else if(!(A&&A.abgabe) && B.start){
       const cur=p.aufgaben[t.id]||(p.aufgaben[t.id]={tipps:[null,null,null]});
       cur.start=cur.start?Math.min(cur.start,B.start):B.start;
@@ -448,20 +485,22 @@ async function gradeAllPending(){
     if(!S.sample) break;
     const a=S.prog.aufgaben[t.id];
     if(!t.noLw&&a&&a.abgabe&&!a.note&&(a.status==="ausstehend"||a.status==="fehler")&&(loadAbgabeLocal(t.id)||S.abgabenCache?.[t.id])) await grade(t.id);
+    if(S.sample&&!t.noLw&&a&&a.versuche&&(loadAbgabeLocal(t.id)||S.abgabenCache?.[t.id])) for(let k=0;k<a.versuche.length;k++){ const v=a.versuche[k]; if(!v.note&&(v.status==="ausstehend"||v.status==="fehler")) await grade(t.id,null,k); }
   }
 }
 function starPath(cx,cy,R,r){ let d=""; for(let k=0;k<10;k++){ const ang=-Math.PI/2+k*Math.PI/5, rad=k%2?r:R; d+=(k?"L":"M")+(cx+rad*Math.cos(ang)).toFixed(1)+" "+(cy+rad*Math.sin(ang)).toFixed(1); } return d+"Z"; }
 function drawMap(){
   const box=$("#mapbox"); if(!box) return;
   const W=Math.max(280, box.clientWidth||300);
-  const cols=W<560?3:(W<820?4:6), rows=Math.ceil(TASKS.length/cols), rowH=128, H=rows*rowH+20;
-    const pts=TASKS.map((t,i)=>{ const r=Math.floor(i/cols), c0=i%cols, c=r%2?cols-1-c0:c0; return {x:(c+.5)*W/cols, y:58+r*rowH+(c%2?10:-6)}; });
+  const GT=galTasks(curGal());
+  const cols=W<560?3:(W<820?4:6), rows=Math.ceil(GT.length/cols), rowH=128, H=rows*rowH+20;
+    const pts=GT.map((t,i)=>{ const r=Math.floor(i/cols), c0=i%cols, c=r%2?cols-1-c0:c0; return {x:(c+.5)*W/cols, y:58+r*rowH+(c%2?10:-6)}; });
   let path=`M${pts[0].x} ${pts[0].y}`;
   for(let i=1;i<pts.length;i++){ const a=pts[i-1], b=pts[i]; const mx=(a.x+b.x)/2, my=(a.y+b.y)/2 + (a.y===b.y?0:0); path+=` Q${(a.x+mx)/2} ${a.y} ${mx} ${my} T${b.x} ${b.y}`; }
   const cur=currentIndex();
   let html=`<path d="${path}" fill="none" stroke="#5560b0" stroke-width="2.5" stroke-dasharray="2 9" stroke-linecap="round"/>`;
-  TASKS.forEach((t,i)=>{
-    const {x,y}=pts[i], a=S.prog.aufgaben[t.id]||{}, open=unlocked(i), done=!!a.abgabe;
+  GT.forEach((t,j)=>{
+    const i=taskIndex(t.id), {x,y}=pts[j], a=S.prog.aufgaben[t.id]||{}, open=unlocked(i), done=!!a.abgabe;
     let fill="#1a2158", stroke="#3a4590", txt="#6f78b8";
     if(done){ const n=a.note; fill= n? (n<=2?"var(--star)":n<=4?"var(--silver)":"var(--copper)") : "#e9ecff"; stroke="#fff6"; txt="#2a1d00"; }
     else if(open){ fill="#2b3690"; stroke=(a.start&&i!==cur)?"var(--nebula)":"var(--comet)"; txt="var(--text)"; }
@@ -477,20 +516,22 @@ function drawMap(){
       ${!open?`<text x="${x+22}" y="${y-18}" font-size="12" fill="#6f78b8">🔒</text>`:""}
     </g>`;
   });
-  const cp=pts[cur];
+  const cp=pts[Math.max(0,GT.findIndex(t=>t.id===TASKS[cur].id))];
   html+=`<g class="catmark" transform="translate(${cp.x+18} ${cp.y-56})"><g transform="scale(.42)">${catSVG().replace(/^<svg[^>]*>|<\/svg>$/g,"").replace(/id="glass"/,'id="glass2"').replace(/url\(#glass\)/,"url(#glass2)")}</g></g>`;
-  box.innerHTML=`<svg id="map" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="group" aria-label="12 Aufgaben als Sterne">${html}</svg>`;
+  box.innerHTML=`<svg id="map" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="group" aria-label="${GT.length} Aufgaben als Sterne">${html}</svg>`;
   box.querySelectorAll(".node").forEach(g=>{
     const go=()=>{ const i=taskIndex(g.dataset.id); if(!unlocked(i)){ toast("🔒","Noch gesperrt","Löse zuerst den Stern davor."); return; } openTask(g.dataset.id); };
     g.addEventListener("click",go); g.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); }});
   });
   const te=$("#toEltern"); if(te) te.onclick=()=>{S.view="eltern"; render(); window.scrollTo(0,0);};
   const tw=$("#toWerkstatt"); if(tw) tw.onclick=()=>{S.view="werkstatt"; render(); window.scrollTo(0,0);};
+  document.querySelectorAll("[data-gal]").forEach(b=>b.onclick=()=>{ S.gal=b.dataset.gal; lsSet("olymp-gal",S.gal); render(); });
   bindTransfer();
 }
 
 function openTask(id){
   S.view="task"; S.cur=id; S.confirm=null;
+  const tg=taskById(id); if(tg){ S.gal=rundeOf(tg); lsSet("olymp-gal",S.gal); }
   const a=S.prog.aufgaben[id]||(S.prog.aufgaben[id]={tipps:[null,null,null]});
   if(!a.start && !a.abgabe){ a.start=Date.now(); a.tipps=a.tipps||[null,null,null]; saveProg(); }
   render(); window.scrollTo(0,0);
@@ -502,15 +543,16 @@ function hintLeft(a,i){
   return HINT_STEP*(i+1)-(a.aktivMs||0);
 }
 function renderTask(){
-  const t=taskById(S.cur), i=taskIndex(t.id), a=S.prog.aufgaben[t.id]||{}, done=!!a.abgabe;
+  const t=taskById(S.cur), i=taskIndex(t.id), a=S.prog.aufgaben[t.id]||{}, re=!!(a.abgabe&&a.wieder), done=!!a.abgabe&&!re;
   const uaOn=!!S.ua[t.id];
   const hints=t.hints.map((h,k)=>{
+    if(re) return `<details class="hintcard"><summary>Tipp ${k+1}</summary><p>${esc(h)}</p></details>`;
     const opened=a.tipps&&a.tipps[k];
     if(opened) return `<div class="hintcard open"><div class="hh"><h3>Tipp ${k+1}</h3><span class="timer">geöffnet nach ${a.tippsMin&&a.tippsMin[k]!=null?a.tippsMin[k]:Math.max(0,Math.round((a.tipps[k]-a.start)/60000))} min</span></div><p>${esc(h)}</p></div>`;
     if(done) return `<div class="hintcard"><div class="hh"><h3>Tipp ${k+1}</h3><span class="timer">nicht gebraucht</span></div></div>`;
     return `<div class="hintcard"><div class="hh"><h3>Tipp ${k+1}</h3><span class="timer" data-hint="${k}"></span></div><button class="btn small" data-open-hint="${k}" hidden>Tipp ${k+1} öffnen</button></div>`;
   }).join("");
-  return `${done?"":renderTimebar(a)}<div class="topbar"><button class="btn ghost small" id="back">← Zur Galaxie</button><span class="muted">Stern ${i+1} von ${TASKS.length}</span>${(!done&&nextOpenIndex(i)>=0)?`<button class="btn small" id="skipBtn">Nächster Stern →</button>`:""}</div>
+  return `${done?"":renderTimebar(re?a.wieder:a)}<div class="topbar"><button class="btn ghost small" id="back">← Zur Galaxie</button><span class="muted">Stern ${i+1} · ${esc(rundeOf(t))}</span>${(!done&&nextOpenIndex(i)>=0)?`<button class="btn small" id="skipBtn">Nächster Stern →</button>`:""}</div>
   <article class="card">
     <div class="taskhead"><div><div class="eyebrow">Aufgabe ${t.id}</div><h2>${esc(t.titel)}</h2>
       <div class="tags"><span class="tag">${esc(t.jahr)}</span>${t.runde?`<span class="tag">${esc(t.runde)}</span>`:""}<span class="tag">${esc(t.thema)}</span></div></div>
@@ -521,7 +563,7 @@ function renderTask(){
     ${t.legend?`<p class="legend">${esc(t.legend)}</p>`:""}
   </article>
   <section class="card" aria-label="Tipps"><div class="eyebrow">Tipps</div>
-    ${done?"":`<p class="muted" style="margin:.3em 0 0;font-size:15px">Denk zuerst selbst nach. Tipp 1 gibt es nach 4 Minuten, Tipp 2 nach 8 und Tipp 3 nach 12 Minuten.</p>`}
+    ${done?"":re?`<p class="muted" style="margin:.3em 0 0;font-size:15px">Neuer Versuch: Die Tipps kannst du jederzeit aufklappen.</p>`:`<p class="muted" style="margin:.3em 0 0;font-size:15px">Denk zuerst selbst nach. Tipp 1 gibt es nach 4 Minuten, Tipp 2 nach 8 und Tipp 3 nach 12 Minuten.</p>`}
     <div class="hints">${hints}</div></section>
   ${done?renderResult(t,a):renderForm(t)}`;
 }
@@ -547,7 +589,8 @@ function renderForm(t){
   let parts=[], cur=null;
   for(const f of t.fields){ const p=f.part||""; if(!cur||cur.p!==p){ cur={p,items:[]}; parts.push(cur);} cur.items.push(f); }
   const body=parts.map(p=>`<div class="part">${p.p?`<div class="pl">${esc(p.p)}</div>`:""}${p.items.map(f=>`<div class="part">${fieldHTML(t,f,d.vals[f.id])}</div>`).join("")}</div>`).join("");
-  return `<section class="card" aria-label="Antwort"><div class="eyebrow">Deine Lösung</div>
+  return `<section class="card" aria-label="Antwort"><div class="eyebrow">${isRetry(t)?tryNr(S.prog.aufgaben[t.id])+". Versuch · Übung":"Deine Lösung"}</div>
+   ${isRetry(t)?`<p class="help" style="margin:.4em 0 0">Deine letzten Antworten stehen schon drin. Verbessere, was du jetzt besser weißt. Die Musterlösung siehst du wieder nach der Abgabe. Die Note vom ersten Versuch bleibt – wie bei der Olympiade.</p>`:""}
    <form class="form" id="ansForm" novalidate>
     ${body}
     ${(OLYMP&&!t.noLw)?lwOnlineHTML(t,d):`<div class="lw"><label for="lw">Lösungsweg (freiwillig)</label>
@@ -561,7 +604,7 @@ function renderForm(t){
      <div class="starters" aria-label="Satzanfänge einfügen">${["Nach Aussage (…) gilt: ","Daraus folgt: ",", weil ","Ich rechne: ","Es gibt keine weiteren, weil ","Also ist das Ergebnis ","Probe: "].map(x=>`<button type="button" class="starter" data-ins="${esc(x)}">${esc(x.replace(/^, /,"… "))}</button>`).join("")}</div>`}
      <textarea id="lw" spellcheck="true" lang="de" placeholder="Freiwillig: Wie bist du vorgegangen?">${esc(d.lw)}</textarea></div>`}
     <div id="formMsg" aria-live="polite"></div>
-    <div class="row"><button class="btn primary" type="submit" id="submitBtn">Antwort abgeben</button><span class="muted" style="font-size:14px">Du hast einen Versuch – wie bei der Olympiade.</span></div>
+    <div class="row"><button class="btn primary" type="submit" id="submitBtn">Antwort abgeben</button>${isRetry(t)?`<button type="button" class="btn ghost small" id="retryCancel">Abbrechen</button>`:`<span class="muted" style="font-size:14px">Du hast einen Versuch – wie bei der Olympiade.</span>`}</div>
    </form></section>`;
 }
 function lwOnlineHTML(t,d){
@@ -569,7 +612,7 @@ function lwOnlineHTML(t,d){
   if(!d.lwp) d.lwp=splitLw(d.lw, parts);
   return `<div class="lw"><label>Lösungsweg <span class="muted" style="font-weight:400">· zählt wie bei der Olympiade</span></label>
      <p class="help">Bei der Olympiade gibt es für die Begründung oft <b>mehr als die Hälfte der Punkte</b>. Sag nicht nur, WAS du gemacht hast, sondern WARUM es stimmt.</p>
-     <div class="dictate"><b>Diktieren:</b> Klick in ein Feld, drück zweimal die <b>Fn-Taste</b> (oder die Mikrofon-Taste) und sprich auf Deutsch. Zum Beenden noch einmal drücken.</div>
+     <div class="dictate"><b>Diktieren:</b> Klick in ein Feld, drück schnell zweimal die <b>Control-Taste</b> (<b>^</b>, links unten) und sprich auf Deutsch. Zum Beenden noch einmal zweimal <b>Control</b> drücken.</div>
      <details class="lwhelp" open><summary>Diese Fragen helfen dir beim Erzählen</summary>
       <ol><li><b>Was weiß ich?</b> „Nach Aussage (2) …“ oder „In der Aufgabe steht …“</li>
       <li><b>Was folgt daraus – und warum?</b> „…, also …, weil …“</li>
@@ -601,14 +644,31 @@ function renderResult(t,a){
     const allOk=o.units.every(u=>u.ok);
     return `<li><span class="res ${allOk?"ok":"bad"}">${allOk?"✓ richtig":"✗ "+(o.units.length>1?o.units.filter(u=>u.ok).length+"/"+o.units.length:"falsch")}</span> ${o.f.part?`<b>${esc(o.f.part)}</b> `:""}${esc(o.f.type==="expr"?o.f.label:o.f.label)}: <span class="mono">${esc(o.given)}</span>${allOk?"":` <span class="muted">→ richtig: ${esc(o.correct)}${o.note?" ("+esc(o.note)+")":""}</span>`}</li>`;
   }).join("") : "";
-  const idx=taskIndex(t.id), next=TASKS[idx+1];
-  return `<section class="card" aria-label="Ergebnis"><div class="eyebrow">Abgegeben am ${fmtDate(a.abgabe)} · ${a.dauerMin??"?"} min · ${hintsUsed(a)} ${hintsUsed(a)===1?"Tipp":"Tipps"}</div>
+  const idx=taskIndex(t.id), next=(TASKS[idx+1]&&rundeOf(TASKS[idx+1])===rundeOf(t))?TASKS[idx+1]:null;
+  return `<section class="card" aria-label="Ergebnis"><div class="eyebrow">${(a.versuche||[]).length?"1. Versuch (zählt) · ":""}Abgegeben am ${fmtDate(a.abgabe)} · ${a.dauerMin??"?"} min · ${hintsUsed(a)} ${hintsUsed(a)===1?"Tipp":"Tipps"}</div>
     <div style="margin-top:10px">${gradeBlock}</div>
     ${chk?`<h3 style="margin-top:18px;font-size:18px">Deine Antworten · ${chk.richtig} von ${chk.einheiten} richtig</h3><ul style="padding-left:1em;list-style:none">${lines}</ul>`:""}
     ${ab&&ab.lw?`<details><summary class="muted" style="cursor:pointer">Dein Lösungsweg</summary><p style="white-space:pre-wrap">${esc(ab.lw)}</p></details>`:""}
+    ${renderVersuche(t,a,ab)}
     <div class="solution"><div class="eyebrow">Musterlösung</div><div class="tasktext">${t.loesung}</div></div>
-    <div class="next">${next?`<button class="btn primary" id="nextBtn">Weiter zu Stern ${idx+2} →</button>`:""}<button class="btn" id="mapBtn">Zur Galaxie</button></div>
+    <div class="next">${next?`<button class="btn primary" id="nextBtn">Weiter zu Stern ${idx+2} →</button>`:""}<button class="btn" id="retryBtn">Nochmal lösen</button><button class="btn" id="mapBtn">Zur Galaxie</button></div>
   </section>`;
+}
+function ansLine(o){
+  const allOk=o.units.every(u=>u.ok);
+  return `<li><span class="res ${allOk?"ok":"bad"}">${allOk?"✓ richtig":"✗ "+(o.units.length>1?o.units.filter(u=>u.ok).length+"/"+o.units.length:"falsch")}</span> ${o.f.part?`<b>${esc(o.f.part)}</b> `:""}${esc(o.f.label)}: <span class="mono">${esc(o.given)}</span>${allOk?"":` <span class="muted">→ richtig: ${esc(o.correct)}${o.note?" ("+esc(o.note)+")":""}</span>`}</li>`;
+}
+function renderVersuche(t,a,ab){
+  const vs=(ab&&ab.versuche)||[]; if(!vs.length) return "";
+  return vs.map((v,k)=>{
+    const s=(a.versuche||[])[k]||{}, note=v.note||s.note, chk=v.vals?checkTask(t,v.vals):null, busy=S.grading[t.id+"#"+k]==="läuft";
+    const better = chk && chk.richtig>(a.richtig||0);
+    return `<div class="versuch"><div class="eyebrow">${k+2}. Versuch · Übung · ${fmtDate(v.abgabe)} · ${v.dauerMin??"?"} min</div>
+      <h3 style="margin-top:8px;font-size:18px">${chk?chk.richtig+" von "+chk.einheiten+" richtig":""}${note?" · Note "+note:(busy?" · Kater Komet bewertet …":"")}${better?" · besser als beim 1. Versuch!":""}</h3>
+      ${v.lob?`<p class="fb"><b>Stark:</b> ${esc(v.lob)}</p>`:""}${v.tipp?`<p class="fb"><b>Nächstes Mal:</b> ${esc(v.tipp)}</p>`:""}
+      ${chk?`<ul style="padding-left:1em;list-style:none">${chk.out.map(ansLine).join("")}</ul>`:""}
+      ${v.lw?`<details><summary class="muted" style="cursor:pointer">Lösungsweg</summary><p style="white-space:pre-wrap">${esc(v.lw)}</p></details>`:""}</div>`;
+  }).join("");
 }
 function bindTask(){
   const t=taskById(S.cur), a=S.prog.aufgaben[t.id]||{};
@@ -616,16 +676,19 @@ function bindTask(){
   $("#uaBtn").onclick=()=>{S.ua[t.id]=!S.ua[t.id]; render();};
   S.curDraft=null;
   const sk=$("#skipBtn"); if(sk) sk.onclick=()=>goNext(t);
-  if(a.abgabe){
+  if(a.abgabe && !a.wieder){
     const nb=$("#nextBtn"); if(nb) nb.onclick=()=>openTask(TASKS[taskIndex(t.id)+1].id);
     $("#mapBtn").onclick=()=>{S.view="map"; render(); window.scrollTo(0,0);};
     const rg=$("#regrade"); if(rg) rg.onclick=()=>grade(t.id);
+    const rb=$("#retryBtn"); if(rb) rb.onclick=()=>{ a.wieder={start:Date.now(), aktivMs:0}; saveProg(); render(); window.scrollTo(0,0); };
     return;
   }
+  const tm=a.wieder||a;     // Zeit läuft für den neuen Versuch getrennt
+  const rc=$("#retryCancel"); if(rc) rc.onclick=()=>{ try{ localStorage.removeItem(draftKey(t.id)); }catch(e){} delete a.wieder; saveProg(); render(); window.scrollTo(0,0); };
   // Tipps mit Countdown
   const tickFn=()=>{
     const now=Date.now();
-    if(!document.hidden && !S.overlayOpen && S.lastTick && now-S.lastTick<5000 && now-S.lastInput<IDLE_MS){ a.aktivMs=(a.aktivMs||0)+(now-S.lastTick); }
+    if(!document.hidden && !S.overlayOpen && S.lastTick && now-S.lastTick<5000 && now-S.lastInput<IDLE_MS){ tm.aktivMs=(tm.aktivMs||0)+(now-S.lastTick); }
     S.lastTick=now; S.tickN=(S.tickN||0)+1; if(S.tickN%15===0) lsSet(progKey(),S.prog);
     document.querySelectorAll("[data-hint]").forEach(el=>{
       const k=+el.dataset.hint, left=hintLeft(a,k), btn=document.querySelector(`[data-open-hint="${k}"]`);
@@ -634,15 +697,15 @@ function bindTask(){
       else { el.textContent="bereit"; btn.hidden=false; }
     });
     // sichtbare Zeit für diesen Stern
-    const rem=timeLeft(a), tc=document.getElementById("tclock");
+    const rem=timeLeft(tm), tc=document.getElementById("tclock");
     if(tc){
       tc.textContent=mmss(rem);
       document.getElementById("timebar").className="timebar "+timeCls(rem);
-      document.getElementById("tmsg").textContent=timeMsg(rem,a);
-      document.getElementById("tprog").style.width=timePct(a)+"%";
+      document.getElementById("tmsg").textContent=timeMsg(rem,tm);
+      document.getElementById("tprog").style.width=timePct(tm)+"%";
       fitTimebar();
     }
-    if(rem<=0 && !S.overlayOpen && S.view==="task" && S.cur===t.id) showTimeUp(t,a);
+    if(rem<=0 && !S.overlayOpen && S.view==="task" && S.cur===t.id) showTimeUp(t,tm);
   };
   tickFn(); S.tick=setInterval(tickFn,1000);
   document.querySelectorAll("[data-open-hint]").forEach(b=>b.onclick=()=>{
@@ -695,7 +758,7 @@ function bindTask(){
     const noLwYet = OLYMP && !t.noLw && core.length<MIN_LW;
     const weak = OLYMP && !t.noLw && (noLwYet || core.length<120 || !REASON_RE.test(core));   // online: Begründung zählt
     const empty=t.fields.filter(f=>isEmpty(f,d.vals[f.id])).length;
-    msg.innerHTML=`<div class="confirm"><b>Wirklich abgeben?</b><span>Du hast nur einen Versuch. Danach siehst du deine Note und die Musterlösung.${empty?` <span class="err">Achtung: ${empty} ${empty===1?"Antwortfeld ist":"Antwortfelder sind"} noch leer.</span>`:""}</span>
+    msg.innerHTML=`<div class="confirm"><b>Wirklich abgeben?</b><span>${a.wieder?"Danach siehst du, was jetzt richtig ist, und die Musterlösung. Die Note vom ersten Versuch bleibt.":"Du hast nur einen Versuch. Danach siehst du deine Note und die Musterlösung."}${empty?` <span class="err">Achtung: ${empty} ${empty===1?"Antwortfeld ist":"Antwortfelder sind"} noch leer.</span>`:""}</span>
       ${weak?`<div class="warn">${noLwYet?`<b>Du hast noch keine Begründung.</b> Ohne Begründung gibt es bei der Olympiade nur wenige Punkte. Erzähl kurz, wie du es gelöst hast und warum es stimmt.`:`<b>Dein Lösungsweg ist noch sehr kurz.</b> Für die Begründung gibt es bei der Olympiade oft mehr als die Hälfte der Punkte. Steht bei jedem Schritt, <i>warum</i> er stimmt (z. B. „wegen Aussage (2)“ oder die Rechnung)?`}</div>`:""}
       <div class="row">${weak?`<button type="button" class="btn primary" id="noSubmit">Lösungsweg ergänzen</button><button type="button" class="btn" id="yesSubmit">Trotzdem abgeben</button>`:`<button type="button" class="btn primary" id="yesSubmit">Ja, abgeben</button><button type="button" class="btn" id="noSubmit">Noch weiterdenken</button>`}</div></div>`;
     $("#noSubmit").onclick=()=>{ msg.innerHTML=""; if(weak){ const f0=$("#lw")||$("[data-lwp]"); if(f0) f0.focus(); } };
@@ -706,6 +769,7 @@ function bindTask(){
 function submitTask(t,d){
   const a=S.prog.aufgaben[t.id]; const now=Date.now();
   const chk=checkTask(t,d.vals);
+  if(a.abgabe && a.wieder){ submitRetry(t,d,a,chk,now); return; }
   a.abgabe=now; a.richtig=chk.richtig; a.einheiten=chk.einheiten; a.dauerMin=Math.max(1,Math.round((a.aktivMs!=null?a.aktivMs:(now-(a.start||now)))/60000)); a.note=null; a.status="ausstehend";
   const td=today(); S.prog.tage=S.prog.tage||[]; if(!S.prog.tage.includes(td)) S.prog.tage.push(td);
   const ab={aufgabe:t.id, titel:t.titel, start:a.start, abgabe:now, tipps:a.tipps||[null,null,null], dauerMin:a.dauerMin, vals:d.vals, lw:d.lw,
@@ -715,6 +779,22 @@ function submitTask(t,d){
   try{ localStorage.removeItem(draftKey(t.id)); }catch(e){}
   render(); window.scrollTo(0,0);
   if(S.sample && !t.noLw) grade(t.id);
+}
+
+function submitRetry(t,d,a,chk,now){
+  const w=a.wieder, dk=draftKey(t.id), k=(a.versuche||[]).length;
+  const dauer=Math.max(1,Math.round((w.aktivMs||0)/60000));
+  a.versuche=(a.versuche||[]).concat([{start:w.start, abgabe:now, richtig:chk.richtig, einheiten:chk.einheiten, dauerMin:dauer, note:null, status:"ausstehend"}]);
+  delete a.wieder;
+  const td=today(); S.prog.tage=S.prog.tage||[]; if(!S.prog.tage.includes(td)) S.prog.tage.push(td);
+  const ab=JSON.parse(JSON.stringify(loadAbgabeLocal(t.id)||S.abgabenCache?.[t.id]||{aufgabe:t.id, titel:t.titel}));
+  ab.versuche=(ab.versuche||[]).concat([{nr:k+2, start:w.start, abgabe:now, dauerMin:dauer, vals:d.vals, lw:d.lw,
+    antworten:chk.out.map(o=>({teil:o.f.part||"", frage:o.f.label, eingabe:o.given, richtig:o.units.every(u=>u.ok), loesung:o.correct, hinweis:o.note||""})),
+    richtig:chk.richtig, einheiten:chk.einheiten, status:"ausstehend", note:null, bewertung:(OLYMP&&!t.noLw)?"Ergebnis + Begründung":"Ergebnis", diktiert:OLYMP}]);
+  saveProg(); saveAbgabe(t.id,ab);
+  try{ localStorage.removeItem(dk); }catch(e){}
+  render(); window.scrollTo(0,0);
+  if(S.sample && !t.noLw) grade(t.id, null, k);
 }
 
 /* ===== Bewertung durch Claude ===== */
@@ -742,7 +822,7 @@ ${OLYMP?`  1 = alle Ergebnisse richtig und jeder wichtige Schritt begründet.
   6 = nichts Brauchbares.
 - Die Angaben unter „WORAUF ES ANKOMMT“ zur Begründung gelten nur, wenn der Schüler freiwillig einen Lösungsweg geschrieben hat.`}
 
-AUFGABE ${t.id} „${t.titel}“
+AUFGABE ${t.id} „${t.titel}“ (${rundeOf(t)})
 ${plain(t.text)}
 
 MUSTERLÖSUNG
@@ -765,21 +845,26 @@ Antworte NUR mit einem JSON-Objekt in genau dieser Form:
 - "tipp": 1–2 kurze Sätze auf Deutsch, direkt an den Schüler, EIN konkreter Punkt, was er beim nächsten Mal besser ${OLYMP?"begründen oder prüfen":"prüfen oder anders angehen"} sollte. Freundlich und ermutigend.
 - "elternnotiz": 1–2 Sätze auf ${PARENT_NOTE_LANG} für die Eltern: warum diese Note, was fehlte.`;
 }
-async function grade(id, target){
+async function grade(id, target, vi){
   const t=taskById(id); const own=!target;
   const sample=S.sample; if(!sample) return;
   const uid= target? target.uid : S.uid;
   let ab = target? target.ab : (loadAbgabeLocal(id) || S.abgabenCache?.[id]);
   if(!ab) return;
-  if(own){ S.grading[id]="läuft"; if(S.view==="task"&&S.cur===id) render(); }
+  const isV = own && vi!=null && ab.versuche && ab.versuche[vi];
+  const gkey = isV ? id+"#"+vi : id;
+  const gab = isV ? {...ab.versuche[vi], aufgabe:ab.aufgabe, titel:ab.titel} : ab;
+  if(own){ S.grading[gkey]="läuft"; if(S.view==="task"&&S.cur===id) render(); }
   try{
-    const r=await sample.json(gradePrompt(t,ab),{modelTier:"default"});
+    const r=await sample.json(gradePrompt(t,gab),{modelTier:"default"});
     let note=Math.round(Number(r&&r.note)); if(!(note>=1&&note<=6)) throw {code:"invalid_json"};
     const upd={note, lob:String(r.lob||"").slice(0,400), tipp:String(r.tipp||"").slice(0,400), elternnotiz:String(r.elternnotiz||"").slice(0,600), status:"bewertet", bewertetAm:Date.now()};
-    ab={...ab,...upd};
+    if(isV){ ab=JSON.parse(JSON.stringify(ab)); ab.versuche[vi]={...ab.versuche[vi],...upd}; } else ab={...ab,...upd};
     if(own){
-      const a=S.prog.aufgaben[id]; a.note=note; a.status="bewertet";
-      delete S.grading[id]; checkBadges(); saveProg(); saveAbgabe(id,ab);
+      const a=S.prog.aufgaben[id];
+      if(isV){ if(a.versuche&&a.versuche[vi]){ a.versuche[vi].note=note; a.versuche[vi].status="bewertet"; } }
+      else { a.note=note; a.status="bewertet"; }
+      delete S.grading[gkey]; checkBadges(); saveProg(); saveAbgabe(id,ab);
       if(note<=2) toast("⭐","Note "+note+"!","Dein Stern leuchtet golden.");
     } else if(S.db){
       await S.db.doc("olymp/"+uid+"/abgaben/"+id).set(JSON.parse(JSON.stringify(ab)));
@@ -788,7 +873,7 @@ async function grade(id, target){
   }catch(e){
     console.warn("Bewertung fehlgeschlagen",e);
     const hide=["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(e&&e.code);
-    if(own){ delete S.grading[id]; const a=S.prog.aufgaben[id]; a.status= hide?"ausstehend":"fehler"; if(hide) S.sample=null; saveProg(); }
+    if(own){ delete S.grading[gkey]; const a=S.prog.aufgaben[id]; const tg=isV?((a.versuche||[])[vi]||{}):a; tg.status= hide?"ausstehend":"fehler"; if(hide) S.sample=null; saveProg(); }
     else throw e;
   }
   if(own && S.view==="task" && S.cur===id) render();
@@ -820,7 +905,7 @@ async function renderEltern(){
       html+=`<h3 style="margin-top:14px;font-size:20px">${esc(nm)}</h3>
       <p class="muted" style="margin:.2em 0 .6em">${abs.length} von ${TASKS.length} Aufgaben abgegeben · Durchschnittsnote ${avg} · ${Object.keys(p.abzeichen||{}).length} Abzeichen · ${(p.tage||[]).length} Trainingstage</p>
       <div class="tablewrap"><table><thead><tr><th>Aufgabe</th><th>Abgegeben</th><th>Zeit</th><th>Tipps</th><th>Felder</th><th>Note</th></tr></thead><tbody>
-      ${abs.map(a=>`<tr><td>${esc(a.aufgabe)} ${esc(a.titel)}</td><td>${fmtDate(a.abgabe)}</td><td>${a.dauerMin??"–"} min</td><td>${(a.tipps||[]).filter(Boolean).length}</td><td>${a.richtig??"–"}/${a.einheiten??"–"}</td><td><b>${a.note??"offen"}</b></td></tr>`).join("")}
+      ${abs.map(a=>`<tr><td>${esc(a.aufgabe)} ${esc(a.titel)}</td><td>${fmtDate(a.abgabe)}</td><td>${a.dauerMin??"–"} min</td><td>${(a.tipps||[]).filter(Boolean).length}</td><td>${a.richtig??"–"}/${a.einheiten??"–"}${(a.versuche||[]).length?" → "+a.versuche[a.versuche.length-1].richtig+"/"+a.versuche[a.versuche.length-1].einheiten:""}</td><td><b>${a.note??"offen"}</b></td></tr>`).join("")}
       </tbody></table></div>
       ${abs.map(a=>{ const t=taskById(a.aufgabe);
         const tips=(a.tipps||[]).map((x,k)=>x?`Tipp ${k+1} nach ${Math.round((x-a.start)/60000)} min`:null).filter(Boolean).join(", ")||"keine Tipps";
@@ -828,6 +913,7 @@ async function renderEltern(){
           <div class="muted">${fmtDate(a.start)} begonnen · ${fmtDate(a.abgabe)} abgegeben · ${esc(tips)}</div>
           <ul style="margin:0;padding-left:1.1em">${(a.antworten||[]).map(x=>`<li>${x.richtig?"✓":"✗"} ${esc(x.teil)} ${esc(x.frage)}: <span class="mono">${esc(x.eingabe)}</span>${x.richtig?"":` <span class="muted">(richtig: ${esc(x.loesung)})</span>`}</li>`).join("")}</ul>
           <div><b>Lösungsweg</b><pre>${esc(a.lw||"")}</pre></div>
+          ${(a.versuche||[]).map((v,k)=>`<div><b>${k+2}. Versuch (Übung)</b> · ${fmtDate(v.abgabe)} · ${v.richtig??"–"}/${v.einheiten??"–"} richtig · Note ${v.note??"offen"}${v.elternnotiz?`<div lang="uk">🛈 ${esc(v.elternnotiz)}</div>`:""}${v.lw?`<pre>${esc(v.lw)}</pre>`:""}</div>`).join("")}
           ${a.note?`<div><b>Note ${a.note}</b> · ${esc(a.lob||"")} ${esc(a.tipp||"")}</div>${a.elternnotiz?`<div lang="uk">🛈 ${esc(a.elternnotiz)}</div>`:""}`:(S.sample&&t?`<div><button class="btn small" data-grade="${esc(uid)}|${esc(a.aufgabe)}">Jetzt bewerten lassen</button></div>`:`<div class="muted">Noch nicht bewertet.</div>`)}
         </div></details>`; }).join("")}`;
       S.elternData=S.elternData||{}; for(const a of abs) S.elternData[uid+"|"+a.aufgabe]=a;
@@ -876,7 +962,7 @@ async function boot(){
   S.prog=lsGet(progKey())||newProg();
   sky(); render();
   let resizeT; addEventListener("resize",()=>{ clearTimeout(resizeT); resizeT=setTimeout(()=>{ sky(); if(S.view==="map") drawMap(); },200); });
-  if(OFFLINE_BUILD||!window.claude||!window.claude.use){ S.notice=OFFLINE_BUILD?"Offline-Version · Dein Fortschritt bleibt auf diesem Tablet. Noten gibt es nach dem Import in die Online-Version (unten auf der Karte).":"Fortschritt wird nur auf diesem Gerät gespeichert."; render(); return; }
+  if(OFFLINE_BUILD||!window.claude||!window.claude.use){ S.notice=OFFLINE_BUILD?"Offline-Version · Dein Fortschritt bleibt auf diesem Tablet. Noten gibt es nach dem Import in die Online-Version (unten auf der Karte).":"Fortschritt wird nur auf diesem Gerät gespeichert."; render(); if(checkBadges()){ lsSet(progKey(),S.prog); render(); } return; }
   const [db,user,sample,downloads]=await Promise.all([claude.use("db"),claude.use("user"),claude.use("sample"),claude.use("downloads")]);
   S.user=user; S.sample=sample; S.downloads=downloads;
   if(user){ try{ S.uid=await user.id(); S.owner=await user.isOwner(); }catch(e){} }
@@ -889,7 +975,7 @@ async function boot(){
       else { S.prog= local || (lsGet("olymp-prog-lokal")||newProg()); saveProg(); }
       // Abgaben laden (für Ergebnisanzeige auf neuem Gerät)
       const sub=await db.collection("olymp/"+S.uid+"/abgaben").get();
-      S.abgabenCache={}; for(const d of sub.docs){ S.abgabenCache[d.id]=d.data(); if(!loadAbgabeLocal(d.id)) lsSet("olymp-abgabe-"+S.uid+"-"+d.id, d.data()); }
+      S.abgabenCache={}; for(const d of sub.docs){ S.abgabenCache[d.id]=d.data(); lsSet("olymp-abgabe-"+S.uid+"-"+d.id, d.data()); }
     }catch(e){ console.warn(e); S.prog=local||newProg(); }
     lsSet(progKey(),S.prog);
     try{ const w=await user.can("data.write"); if(w===false){ S.canWrite=false; S.notice="Dein Fortschritt kann nur auf diesem Gerät gespeichert werden. Bitte deine Eltern, dir für diese Seite mindestens das Recht „kann benutzen“ zu geben."; } }catch(e){}
@@ -899,6 +985,7 @@ async function boot(){
   }
   // offene Bewertungen nachholen (eigene)
   render();
+  if(checkBadges()){ saveProg(); render(); }
   if(S.sample && TASKS.some(t=>{ const a=S.prog.aufgaben[t.id]; return !t.noLw&&a&&a.abgabe&&!a.note&&a.status==="ausstehend"; })) gradeAllPending();
 }
 boot();

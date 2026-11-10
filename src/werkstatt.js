@@ -19,6 +19,37 @@ const WERKSTATT=[
   ]
 },
 {
+  id:"allefinden", ic:"🔍", titel:"Alle finden – keine vergessen",
+  intro:`<p>In der Regionalrunde heißt es oft „Ermittle <b>alle</b> …“ oder „Wie viele Möglichkeiten gibt es?“. Punkte gibt es nur, wenn du <b>keine vergisst</b> und <b>erklärst, warum es keine weiteren gibt</b>.</p>
+<ol><li><b>Ordnen:</b> Such dir ein Merkmal und geh es der Reihe nach durch – die erste Ziffer, die Größe, die Anzahl der großen Münzen …</li>
+<li><b>Zählen mit Mal:</b> Kommen Entscheidungen nacheinander (erst Platz 1, dann Platz 2), nimmst du die Möglichkeiten mal: 3 · 2.</li>
+<li><b>Doppelte vermeiden:</b> Anna gibt Ben die Hand – das ist derselbe Händedruck wie Ben gibt Anna die Hand.</li>
+<li><b>Schlusssatz:</b> „Es gibt keine weiteren, weil …“</li></ol>`,
+  items:[
+    {id:"f1", text:"Paul hat die Karten 1, 3 und 5 (jede Karte nur einmal). Schreibe alle zweistelligen Zahlen auf, die er legen kann – der Größe nach.", field:{type:"numset", placeholder:"13, …", answer:[13,15,31,35,51,53]},
+     why:"13, 15, 31, 35, 51, 53. Für die Zehnerstelle gibt es 3 Karten, für die Einerstelle danach noch 2: 3 · 2 = 6. Geordnet nach der ersten Ziffer vergisst man keine."},
+    {id:"f2", text:"Jetzt hat Paul die Karten 0, 2 und 4. Schreibe alle dreistelligen Zahlen auf (die 0 darf nicht vorn stehen).", field:{type:"numset", placeholder:"204, …", answer:[204,240,402,420]},
+     why:"204, 240, 402, 420. Vorn darf nur 2 oder 4 stehen (2 Möglichkeiten). Danach bleiben 2 Karten, die auf 2 Arten liegen können: 2 · 2 = 4."},
+    {id:"f3", text:"Wie viele dreistellige Zahlen kann man mit den Karten 2, 4, 6 und 8 legen, wenn jede Karte höchstens einmal vorkommt?", field:{type:"num", answer:24},
+     why:"Hunderter: 4 Karten, Zehner: noch 3, Einer: noch 2. 4 · 3 · 2 = 24."},
+    {id:"f4", text:"Finde alle zweistelligen Zahlen, bei denen das Produkt der beiden Ziffern 12 ist.", field:{type:"numset", placeholder:"z. B. 34, …", answer:[26,34,43,62]},
+     why:"26, 34, 43, 62. Zerlege 12 in zwei Ziffern: 2 · 6 und 3 · 4 (1 · 12 geht nicht, 12 ist keine Ziffer). Jedes Paar gibt es in zwei Reihenfolgen. Keine weiteren, weil es keine anderen Zerlegungen gibt."},
+    {id:"f5", text:"Finde alle zweistelligen Zahlen mit der Quersumme 4 (Zehnerziffer + Einerziffer = 4).", field:{type:"numset", placeholder:"z. B. 13, …", answer:[13,22,31,40]},
+     why:"13, 22, 31, 40. Die Zehnerziffer kann 1, 2, 3 oder 4 sein (0 geht nicht, größer als 4 auch nicht). Zu jeder gibt es genau eine Einerziffer. Also genau 4 Zahlen."},
+    {id:"f6", text:"Welche Begründung zeigt am besten, dass es bei Aufgabe 5 keine weiteren Zahlen gibt?",
+     field:{type:"choice", options:["A: Ich habe lange gesucht und keine weitere gefunden.","B: Die Zehnerziffer kann nur 1, 2, 3 oder 4 sein. Zu jeder gehört genau eine Einerziffer (3, 2, 1, 0). Also gibt es genau diese 4 Zahlen.","C: Es sind 4 Zahlen, weil die Quersumme 4 ist."], answer:"B: Die Zehnerziffer kann nur 1, 2, 3 oder 4 sein. Zu jeder gehört genau eine Einerziffer (3, 2, 1, 0). Also gibt es genau diese 4 Zahlen."},
+     why:"Nur B geht alle Fälle der Reihe nach durch. „Lange gesucht“ ist kein Beweis, und C ist ein Zufall."},
+    {id:"f7", text:"Anna, Ben, Cem und Dora setzen sich auf eine Bank mit 4 Plätzen. Anna will ganz am Rand sitzen. Wie viele Möglichkeiten gibt es?", field:{type:"num", answer:12},
+     why:"Anna: linker oder rechter Rand (2 Möglichkeiten). Die anderen drei auf die drei freien Plätze: 3 · 2 · 1 = 6. Zusammen 2 · 6 = 12."},
+    {id:"f8", text:"Fünf Kinder geben sich zur Begrüßung gegenseitig je einmal die Hand. Wie viele Händedrücke sind das?", field:{type:"num", answer:10},
+     why:"Kind 1 gibt 4 Kindern die Hand, Kind 2 noch 3 neuen, Kind 3 noch 2, Kind 4 noch 1: 4 + 3 + 2 + 1 = 10. Achtung: 5 · 4 = 20 zählt jeden Händedruck doppelt."},
+    {id:"f9", text:"Auf wie viele Arten kann man genau 10 Cent mit 1-, 2- und 5-Cent-Münzen bezahlen? (Es kommt nur darauf an, welche Münzen, nicht auf die Reihenfolge.)", field:{type:"num", answer:10},
+     why:"Ordne nach der Anzahl der 5-Cent-Münzen. Zwei: 5 + 5 (1 Art). Eine: Rest 5 Cent mit 0, 1 oder 2 Zwei-Cent-Münzen (3 Arten). Keine: 10 Cent mit 0 bis 5 Zwei-Cent-Münzen (6 Arten). Zusammen 1 + 3 + 6 = 10."},
+    {id:"f10", text:"Wie viele Quadrate (alle Größen zusammen) siehst du in einem Quadrat aus 3 × 3 Kästchen?", field:{type:"num", answer:14},
+     why:"Ordne nach der Größe: 1 × 1: 9 Stück, 2 × 2: 4 Stück, 3 × 3: 1 Stück. Zusammen 9 + 4 + 1 = 14."}
+  ]
+},
+{
   id:"punkt", ic:"✖", titel:"Punkt vor Strich",
   intro:`<p>Reihenfolge beim Rechnen:</p>
 <ol><li><b>Klammern</b> zuerst.</li><li>Dann <b>· und :</b> (Punktrechnung).</li><li>Zuletzt <b>+ und −</b> (Strichrechnung).</li></ol>
@@ -60,7 +91,7 @@ function renderWerkstattCard(){
   const w=wkDone(S.prog);
   return `<section class="card wkcard" aria-label="Werkstatt"><div class="eyebrow">Werkstatt</div>
     <h2 style="font-size:20px;margin-top:4px">Kater Komets Werkstatt</h2>
-    <p class="muted" style="margin:.3em 0 .7em">Kurze Übungen für drei Profi-Tricks: systematisch zählen, Punkt vor Strich, gut begründen. ${w.n} von ${w.all} geschafft.</p>
+    <p class="muted" style="margin:.3em 0 .7em">Kurze Übungen für vier Profi-Tricks: systematisch zählen, alle finden, Punkt vor Strich, gut begründen. ${w.n} von ${w.all} geschafft.</p>
     <button class="btn" id="toWerkstatt">Werkstatt öffnen</button></section>`;
 }
 function renderWerkstatt(){
